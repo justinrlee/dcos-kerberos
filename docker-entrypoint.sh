@@ -41,10 +41,18 @@ fi
 
 
 if [ -z ${KRB5_ADMINSERVER} ]; then
-    echo "KRB5_ADMINSERVER provided. Using ${KRB5_KDC} in place."
+    echo "No KRB5_ADMINSERVER provided. Using ${KRB5_KDC} in place."
     KRB5_ADMINSERVER=${KRB5_KDC}
+    KADMIND_ENABLED=true
 fi
 
+if [ ${KADMIND_ENABLED} == true ]; then
+    echo "KADMIND_ENABLED is true. Starting kadmind daemon."
+    cp -f /etc/supervisord-kadmin.conf /etc/supervisord.conf
+else
+    echo "KADMIND_ENABLED is not true. Skipping kadmind daemon."
+    cp -f /etc/supervisord-kdc.conf /etc/supervisord.conf
+fi
 
 if [ ! -f "/var/lib/krb5kdc/principal" ]; then
 

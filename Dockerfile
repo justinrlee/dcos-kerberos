@@ -2,9 +2,9 @@ FROM alpine
 
 RUN apk add --no-cache krb5-server krb5 supervisor haveged
 
-ADD supervisord.conf /etc/supervisord.conf
+COPY supervisord*.conf /etc/
 
-ADD docker-entrypoint.sh /
+COPY docker-entrypoint.sh /
 
 VOLUME /var/lib/krb5kdc
 
