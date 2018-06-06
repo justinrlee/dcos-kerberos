@@ -26,6 +26,9 @@ EOT
 
     # Finally, close our brackets
     echo "  }" >> /etc/krb5.conf
+
+    # Now, copy ourselves to /srv
+    cp -f /etc/krb5.conf /srv
 }
 
 # Creates /var/lib/krb5kdc/kdc.conf
@@ -175,8 +178,6 @@ if [ ! -f "/var/lib/krb5kdc/principal" ]; then
     # {{KERBEROS_PRIMARY_HTTP}}/journal-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
     # keytabs/hdfs.journal-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos.keytab
 fi
-
-cp /etc/krb5.conf /srv/
 
 if [ ${KADMIND_ENABLED} == true ]; then
     echo "KADMIND_ENABLED is true. Starting kadmind daemon."
