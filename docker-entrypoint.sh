@@ -33,13 +33,6 @@ if [ -z ${KERBEROS_HDFS_PRIMARY_HTTP} ]; then
     echo "No KERBEROS_HDFS_PRIMARY_HTTP provided.  Using '${KERBEROS_HDFS_PRIMARY_HTTP}' ..."
 fi
 
-# Harcoded for now
-# NUM_DATA_NODES=3
-# NUM_NAME_NODES=2
-# NUM_ZKFC_NODES=2
-# NUM_JOURNAL_NODES=3
-
-
 if [ -z ${KRB5_ADMINSERVER} ]; then
     echo "No KRB5_ADMINSERVER provided. Using ${KRB5_KDC} in place."
     KRB5_ADMINSERVER=${KRB5_KDC}
@@ -122,14 +115,20 @@ EOT
     kadmin.local -q "addprinc -pw ${KRB5_PASS} admin/admin@${KRB5_REALM}"
 
 
-    # NUM_DATA_NODES=3
-    # NUM_NAME_NODES=2
-    # NUM_ZKFC_NODES=2
-    # NUM_JOURNAL_NODES=3
+    NUM_DATA_NODES=${NUM_DATA_NODES:-3}
+    NUM_NAME_NODES=2
+    NUM_ZKFC_NODES=2
+    NUM_JOURNAL_NODES=3
 
     mkdir /keytabs
 
-    for node in data-0-node data-1-node data-2-node name-0-node name-1-node name-0-zkfc name-1-zkfc journal-0-node journal-1-node journal-2-node; do
+    NODE_LIST=
+    for i in $(seq 0 $((${NUM_NAME_NODES}-1))); do NODE_LIST+="name-${i}-node "; done
+    for i in $(seq 0 $((${NUM_ZKFC_NODES}-1))); do NODE_LIST+="name-${i}-zkfc "; done
+    for i in $(seq 0 $((${NUM_DATA_NODES}-1))); do NODE_LIST+="data-${i}-node "; done
+    for i in $(seq 0 $((${NUM_JOURNAL_NODES}-1))); do NODE_LIST+="journal-${i}-node "; done
+
+    for node in ${NODE_LIST}; do
     kadmin.local -q "addprinc -randkey ${KERBEROS_HDFS_PRIMARY}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
     kadmin.local -q "addprinc -randkey ${KERBEROS_HDFS_PRIMARY_HTTP}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
     kadmin.local -q "ktadd -norandkey -k /keytabs/${KERBEROS_HDFS_PRIMARY}.${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos.keytab \
