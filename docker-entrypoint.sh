@@ -56,6 +56,28 @@ EOT
 }
 
 function hdfs_keytabs() {
+    KERBEROS_HDFS_FRAMEWORK=${KERBEROS_HDFS_FRAMEWORK:-hdfs}
+    # It's principal, but support the legacy variable names
+    KERBEROS_HDFS_PRINCIPAL=${KERBEROS_HDFS_PRINCIPAL}
+    KERBEROS_HDFS_PRINCIPAL=${KERBEROS_HDFS_PRINCIPAL:-${KERBEROS_HDFS_PRIMARY}}
+    KERBEROS_HDFS_PRINCIPAL=${KERBEROS_HDFS_PRINCIPAL:-hdfs}
+    # Node counts
+    NUM_NAME_NODES=2
+    NUM_ZKFC_NODES=2
+    NUM_JOURNAL_NODES=${NUM_JOURNAL_NODES:-3}
+    NUM_DATA_NODES=${NUM_DATA_NODES:-3}
+
+    echo
+    echo "HDFS Kerberos is enabled"
+    echo "Using HDFS Framework:     ${KERBEROS_HDFS_FRAMEWORK}"
+    echo "Using Kerberos Principal: ${KERBEROS_HDFS_PRINCIPAL}"
+    echo
+    echo "Node Counts"
+    echo "NameNode(s):    ${NUM_NAME_NODES}"
+    echo "ZKFC(s):        ${NUM_ZKFC_NODES}"
+    echo "JournalNode(s): ${NUM_JOURNAL_NODES}"
+    echo "DataNode(s):    ${NUM_DATA_NODES}"
+
     NODE_LIST=
     for i in $(seq 0 $((${NUM_NAME_NODES}-1))); do NODE_LIST+="name-${i}-node "; done
     for i in $(seq 0 $((${NUM_ZKFC_NODES}-1))); do NODE_LIST+="name-${i}-zkfc "; done
@@ -94,31 +116,7 @@ echo "Using Kerberos Admin Server:  ${KRB5_ADMINSERVER}"
 echo "Using Kerberos KDC(s):        ${KRB5_KDCS}"
 echo "Using Kerberos password:      ${KRB5_PASS}"
 
-# HDFS section
 KERBEROS_HDFS_ENABLED=${KERBEROS_HDFS_ENABLED:-true}
-KERBEROS_HDFS_FRAMEWORK=${KERBEROS_HDFS_FRAMEWORK:-hdfs}
-# It's principal, but support the legacy variable names
-KERBEROS_HDFS_PRINCIPAL=${KERBEROS_HDFS_PRINCIPAL}
-KERBEROS_HDFS_PRINCIPAL=${KERBEROS_HDFS_PRINCIPAL:-${KERBEROS_HDFS_PRIMARY}}
-KERBEROS_HDFS_PRINCIPAL=${KERBEROS_HDFS_PRINCIPAL:-hdfs}
-
-NUM_NAME_NODES=2
-NUM_ZKFC_NODES=2
-NUM_JOURNAL_NODES=${NUM_JOURNAL_NODES:-3}
-NUM_DATA_NODES=${NUM_DATA_NODES:-3}
-
-if [ ${KERBEROS_HDFS_ENABLED} == true ]; then
-    echo
-    echo "HDFS Kerberos is enabled"
-    echo "Using HDFS Framework:     ${KERBEROS_HDFS_FRAMEWORK}"
-    echo "Using Kerberos Principal: ${KERBEROS_HDFS_PRINCIPAL}"
-    echo
-    echo "Node Counts"
-    echo "NameNode(s):    ${NUM_NAME_NODES}"
-    echo "ZKFC(s):        ${NUM_ZKFC_NODES}"
-    echo "JournalNode(s): ${NUM_JOURNAL_NODES}"
-    echo "DataNode(s):    ${NUM_DATA_NODES}"
-fi
 
 if [ ! -f "/var/lib/krb5kdc/principal" ]; then
     echo
