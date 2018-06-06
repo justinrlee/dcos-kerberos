@@ -181,10 +181,9 @@ fi
 
 if [ ${KADMIND_ENABLED} == true ]; then
     echo "KADMIND_ENABLED is true. Starting kadmind daemon."
-    cp -f /etc/supervisord-kadmin.conf /etc/supervisord.conf
+    __suffix="kadmind"
 else
-    echo "KADMIND_ENABLED is not true. Skipping kadmind daemon."
-    cp -f /etc/supervisord-kdc.conf /etc/supervisord.conf
+    __suffix="kdc"
 fi
 
-/usr/bin/supervisord -c /etc/supervisord.conf
+/usr/bin/supervisord -c /etc/supervisord-${__suffix}.conf
