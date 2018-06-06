@@ -52,6 +52,26 @@ function kdc_conf() {
 EOT
 }
 
+function hdfs_keytabs() {
+    NODE_LIST=
+    for i in $(seq 0 $((${NUM_NAME_NODES}-1))); do NODE_LIST+="name-${i}-node "; done
+    for i in $(seq 0 $((${NUM_ZKFC_NODES}-1))); do NODE_LIST+="name-${i}-zkfc "; done
+    for i in $(seq 0 $((${NUM_DATA_NODES}-1))); do NODE_LIST+="data-${i}-node "; done
+    for i in $(seq 0 $((${NUM_JOURNAL_NODES}-1))); do NODE_LIST+="journal-${i}-node "; done
+
+    for node in ${NODE_LIST}; do
+        # Assuming these principals don't exist
+        kadmin.local -q "addprinc -randkey ${KERBEROS_HDFS_PRIMARY}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
+        kadmin.local -q "addprinc -randkey HTTP/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
+        kt_file=${KERBEROS_HDFS_PRIMARY}.${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos.keytab
+        if [ ! -f /keytabs/${kt_file} ]; then
+            kadmin.local -q "ktadd -norandkey -k /keytabs/${KERBEROS_HDFS_PRIMARY}.${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos.keytab \
+                             ${KERBEROS_HDFS_PRIMARY}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM} \
+                             HTTP/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
+        fi
+    done
+}
+
 KRB5_REALM=${KRB5_REALM:-MESOS}
 KRB5_ADMINSERVER=${KRB5_ADMINSERVER} # This may end up blank, that's OK
 KRB5_PASS=${KRB5_PASS:-$(</dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo)}
@@ -79,10 +99,10 @@ KERBEROS_HDFS_PRINCIPAL=${KERBEROS_HDFS_PRINCIPAL}
 KERBEROS_HDFS_PRINCIPAL=${KERBEROS_HDFS_PRINCIPAL:-${KERBEROS_HDFS_PRIMARY}}
 KERBEROS_HDFS_PRINCIPAL=${KERBEROS_HDFS_PRINCIPAL:-hdfs}
 
-NUM_DATA_NODES=${NUM_DATA_NODES:-3}
-NUM_JOURNAL_NODES=${NUM_JOURNAL_NODES:-3}
 NUM_NAME_NODES=2
 NUM_ZKFC_NODES=2
+NUM_JOURNAL_NODES=${NUM_JOURNAL_NODES:-3}
+NUM_DATA_NODES=${NUM_DATA_NODES:-3}
 
 if [ ${KERBEROS_HDFS_ENABLED} == true ]; then
     echo
@@ -92,9 +112,9 @@ if [ ${KERBEROS_HDFS_ENABLED} == true ]; then
     echo
     echo "Node Counts"
     echo "NameNode(s):    ${NUM_NAME_NODES}"
-    echo "DataNode(s):    ${NUM_DATA_NODES}"
     echo "ZKFC(s):        ${NUM_ZKFC_NODES}"
     echo "JournalNode(s): ${NUM_JOURNAL_NODES}"
+    echo "DataNode(s):    ${NUM_DATA_NODES}"
 fi
 
 if [ ! -f "/var/lib/krb5kdc/principal" ]; then
@@ -115,22 +135,11 @@ if [ ! -f "/var/lib/krb5kdc/principal" ]; then
     echo "Creating Admin (admin/admin) account"
     kadmin.local -q "addprinc -pw ${KRB5_PASS} admin/admin@${KRB5_REALM}"
 
-
     mkdir /keytabs
-
-    NODE_LIST=
-    for i in $(seq 0 $((${NUM_NAME_NODES}-1))); do NODE_LIST+="name-${i}-node "; done
-    for i in $(seq 0 $((${NUM_ZKFC_NODES}-1))); do NODE_LIST+="name-${i}-zkfc "; done
-    for i in $(seq 0 $((${NUM_DATA_NODES}-1))); do NODE_LIST+="data-${i}-node "; done
-    for i in $(seq 0 $((${NUM_JOURNAL_NODES}-1))); do NODE_LIST+="journal-${i}-node "; done
-
-    for node in ${NODE_LIST}; do
-    kadmin.local -q "addprinc -randkey ${KERBEROS_HDFS_PRIMARY}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
-    kadmin.local -q "addprinc -randkey HTTP/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
-    kadmin.local -q "ktadd -norandkey -k /keytabs/${KERBEROS_HDFS_PRIMARY}.${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos.keytab \
-                                            ${KERBEROS_HDFS_PRIMARY}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM} \
-                                            HTTP/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
-    done
+    if [ ${KERBEROS_HDFS_ENABLED} == true ] && [ ${KADMIND_ENABLED} == true ]; then
+        # We're a kadmind, so we should create the keytabs, etc
+        hdfs_keytabs
+    fi
 
     # ls /srv/
 
