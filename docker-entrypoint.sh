@@ -67,12 +67,10 @@ function hdfs_keytabs() {
     NUM_JOURNAL_NODES=${NUM_JOURNAL_NODES:-3}
     NUM_DATA_NODES=${NUM_DATA_NODES:-3}
 
-    echo
     echo "HDFS Kerberos is enabled"
     echo "Using HDFS Framework:     ${KERBEROS_HDFS_FRAMEWORK}"
     echo "Using Kerberos Principal: ${KERBEROS_HDFS_PRINCIPAL}"
-    echo
-    echo "Node Counts"
+    echo "HDFS Node Counts"
     echo "NameNode(s):    ${NUM_NAME_NODES}"
     echo "ZKFC(s):        ${NUM_ZKFC_NODES}"
     echo "JournalNode(s): ${NUM_JOURNAL_NODES}"
@@ -119,7 +117,6 @@ echo "Using Kerberos password:      ${KRB5_PASS}"
 KERBEROS_HDFS_ENABLED=${KERBEROS_HDFS_ENABLED:-true}
 
 if [ ! -f "/var/lib/krb5kdc/principal" ]; then
-    echo
     echo "Creating /etc/krb5.conf Kerberos client configuration"
     krb5_conf
     echo "Creating /var/lib/krb5kdc/kdc.conf Kerberos KDC configuration"
@@ -140,41 +137,13 @@ if [ ! -f "/var/lib/krb5kdc/principal" ]; then
     if [ ${KERBEROS_HDFS_ENABLED} == true ] && [ ${KADMIND_ENABLED} == true ]; then
         # We're a kadmind, so we should create the keytabs, etc
         hdfs_keytabs
+        # tar -czvf /srv/hdfs-keytabs.tar.gz /keytabs/${KERBEROS_HDFS_PRINCIPAL}.*.mesos.keytab
+        tar -czvf /srv/keytabs.tar.gz /keytabs/*.keytab
     fi
-
-    # ls /srv/
-
-    tar -czvf /srv/keytabs.tar.gz /keytabs/*.keytab
-    # cd /srv; tar -czvf /srv/keytabs.tar.gz *.keytab
-    # cd -
-
-    # KRB5_REALM
-    # KERBEROS_HDFS_FRAMEWORK
-    # KERBEROS_HDFS_PRIMARY
-    # KERBEROS_HDFS_PRIMARY_HTTP
 
     # Need to generate keytabs:
     # {{KERBEROS_PRIMARY}}/{{TASK_NAME}}.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
     # keytabs/{{KERBEROS_PRIMARY}}.{{TASK_NAME}}.{{FRAMEWORK_NAME}}.mesos.keytab
-
-    # Datanode
-    # {{KERBEROS_PRIMARY}}/data-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
-    # keytabs/{{KERBEROS_PRIMARY}}.data-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos.keytab
-
-    # Namenode
-    # {{KERBEROS_PRIMARY}}/name-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
-    # {{KERBEROS_PRIMARY_HTTP}}/name-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
-    # keytabs/{{KERBEROS_PRIMARY}}.name-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos.keytab
-
-    # zkfc
-    # {{KERBEROS_PRIMARY}}/zkfc-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
-    # {{KERBEROS_PRIMARY_HTTP}}/zkfc-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
-    # keytabs/{{KERBEROS_PRIMARY}}.zkfc-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos.keytab
-
-    # journal
-    # {{KERBEROS_PRIMARY}}/journal-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
-    # {{KERBEROS_PRIMARY_HTTP}}/journal-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
-    # keytabs/hdfs.journal-{{POD_INSTANCE_INDEX}}-node.{{FRAMEWORK_NAME}}.mesos.keytab
 fi
 
 if [ ${KADMIND_ENABLED} == true ]; then
