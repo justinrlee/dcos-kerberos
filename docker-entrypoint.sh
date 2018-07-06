@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 # haveged
 
 # Creates /etc/krb5.conf
@@ -76,20 +78,20 @@ function hdfs_keytabs() {
     echo "JournalNode(s): ${NUM_JOURNAL_NODES}"
     echo "DataNode(s):    ${NUM_DATA_NODES}"
 
-    NODE_LIST=
-    for i in $(seq 0 $((${NUM_NAME_NODES}-1))); do NODE_LIST+="name-${i}-node "; done
-    for i in $(seq 0 $((${NUM_ZKFC_NODES}-1))); do NODE_LIST+="name-${i}-zkfc "; done
-    for i in $(seq 0 $((${NUM_DATA_NODES}-1))); do NODE_LIST+="data-${i}-node "; done
-    for i in $(seq 0 $((${NUM_JOURNAL_NODES}-1))); do NODE_LIST+="journal-${i}-node "; done
+    NODE_LIST=""
+    for i in $(seq 0 $((${NUM_NAME_NODES}-1))); do NODE_LIST="${NODE_LIST} name-${i}-node "; done
+    for i in $(seq 0 $((${NUM_ZKFC_NODES}-1))); do NODE_LIST="${NODE_LIST} name-${i}-zkfc "; done
+    for i in $(seq 0 $((${NUM_DATA_NODES}-1))); do NODE_LIST="${NODE_LIST} data-${i}-node "; done
+    for i in $(seq 0 $((${NUM_JOURNAL_NODES}-1))); do NODE_LIST="${NODE_LIST} journal-${i}-node "; done
 
     for node in ${NODE_LIST}; do
         # Assuming these principals don't exist
-        kadmin.local -q "addprinc -randkey ${KERBEROS_HDFS_PRIMARY}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
+        kadmin.local -q "addprinc -randkey ${KERBEROS_HDFS_PRINCIPAL}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
         kadmin.local -q "addprinc -randkey HTTP/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
-        kt_file=${KERBEROS_HDFS_PRIMARY}.${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos.keytab
+        kt_file=${KERBEROS_HDFS_PRINCIPAL}.${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos.keytab
         if [ ! -f /keytabs/${kt_file} ]; then
-            kadmin.local -q "ktadd -norandkey -k /keytabs/${KERBEROS_HDFS_PRIMARY}.${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos.keytab \
-                             ${KERBEROS_HDFS_PRIMARY}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM} \
+            kadmin.local -q "ktadd -norandkey -k /keytabs/${KERBEROS_HDFS_PRINCIPAL}.${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos.keytab \
+                             ${KERBEROS_HDFS_PRINCIPAL}/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM} \
                              HTTP/${node}.${KERBEROS_HDFS_FRAMEWORK}.mesos@${KRB5_REALM}"
         fi
     done
@@ -125,8 +127,8 @@ if [ ! -f "/var/lib/krb5kdc/principal" ]; then
     echo "*/admin@${KRB5_REALM} *" > /var/lib/krb5kdc/kadm5.acl
     echo "*/service@${KRB5_REALM} aci" >> /var/lib/krb5kdc/kadm5.acl
     echo "Creating temporary password file"
-    echo "${KRB5_PASS} > /etc/krb5_pass
-    echo "${KRB5_PASS} >> /etc/krb5_pass
+    echo "${KRB5_PASS}" > /etc/krb5_pass
+    echo "${KRB5_PASS}" >> /etc/krb5_pass
     echo "Creating Kerberos database"
     kdb5_util create -r ${KRB5_REALM} < /etc/krb5_pass
     shred -u /etc/krb5_pass
@@ -142,13 +144,13 @@ if [ ! -f "/var/lib/krb5kdc/principal" ]; then
     fi
 
     # Need to generate keytabs:
-    # {{KERBEROS_PRIMARY}}/{{TASK_NAME}}.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
-    # keytabs/{{KERBEROS_PRIMARY}}.{{TASK_NAME}}.{{FRAMEWORK_NAME}}.mesos.keytab
+    # {{KERBEROS_PRINCIPAL}}/{{TASK_NAME}}.{{FRAMEWORK_NAME}}.mesos@{{KERBEROS_REALM}}
+    # keytabs/{{KERBEROS_PRINCIPAL}}.{{TASK_NAME}}.{{FRAMEWORK_NAME}}.mesos.keytab
 fi
 
 if [ ${KADMIND_ENABLED} == true ]; then
     echo "KADMIND_ENABLED is true. Starting kadmind daemon."
-    __suffix="kadmind"
+    __suffix="kadmin"
 else
     __suffix="kdc"
 fi
